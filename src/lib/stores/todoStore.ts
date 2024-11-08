@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { v4 as uuid } from 'uuid';
 
@@ -13,60 +13,58 @@ export interface Todo {
   dueDate?: string;
 }
 
-const storedTodos = browser ? localStorage.getItem('todos') : null;
-const initialTodos: Todo[] = storedTodos ? JSON.parse(storedTodos) : [];
-
 function createTodoStore() {
+  // Load initial todos from localStorage
+  const initialTodos = browser 
+    ? JSON.parse(localStorage.getItem('todos') || '[]') 
+    : [];
+
   const { subscribe, set, update } = writable<Todo[]>(initialTodos);
 
-  const updateAndStore = (newTodos: Todo[]) => {
+  // Helper to persist todos to localStorage
+  const persistTodos = (todos: Todo[]) => {
     if (browser) {
-      localStorage.setItem('todos', JSON.stringify(newTodos));
+      localStorage.setItem('todos', JSON.stringify(todos));
     }
-    return newTodos;
   };
 
   return {
     subscribe,
-    add: (text: string, steps: string[] = [], category: string = 'personal', priority: 'medium' = 'medium') => {
-      update(todos => updateAndStore([...todos, {
-        id: uuid(),
-        text,
-        completed: false,
-        steps,
-        category,
-        priority,
-        createdAt: new Date().toISOString(),
-      }]));
+    add: (text: string, steps: string[] = [], category: string = 'personal', priority: 'medium' = 'medium', dueDate?: string) => {
+      update(todos => {
+        const newTodos = [...todos, {
+          id: uuid(),
+          text,
+          completed: false,
+          steps,
+          category,
+          priority,
+          createdAt: new Date().toISOString(),
+          dueDate
+        }];
+        persistTodos(newTodos);
+        return newTodos;
+      });
     },
     toggle: (id: string) => {
-      update(todos => updateAndStore(
-        todos.map(todo =>
+      update(todos => {
+        const newTodos = todos.map(todo => 
           todo.id === id ? { ...todo, completed: !todo.completed } : todo
-        )
-      ));
+        );
+        persistTodos(newTodos);
+        return newTodos;
+      });
     },
     delete: (id: string) => {
-      update(todos => updateAndStore(
-        todos.filter(todo => todo.id !== id)
-      ));
-    },
-    addSteps: (id: string, steps: string[]) => {
-      update(todos => updateAndStore(
-        todos.map(todo =>
-          todo.id === id ? { ...todo, steps } : todo
-        )
-      ));
+      update(todos => {
+        const newTodos = todos.filter(todo => todo.id !== id);
+        persistTodos(newTodos);
+        return newTodos;
+      });
     },
     reorder: (newTodos: Todo[]) => {
-      update(() => updateAndStore(newTodos));
-    },
-    updateDueDate: (id: string, dueDate: string) => {
-      update(todos => updateAndStore(
-        todos.map(todo =>
-          todo.id === id ? { ...todo, dueDate } : todo
-        )
-      ));
+      persistTodos(newTodos);
+      set(newTodos);
     }
   };
 }

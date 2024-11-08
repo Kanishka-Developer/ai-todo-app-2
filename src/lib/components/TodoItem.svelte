@@ -3,7 +3,7 @@
   import { todos } from '$lib/stores/todoStore';
   
   export let todo: Todo;
-
+  
   const priorityClasses = {
     high: 'text-red-600',
     medium: 'text-yellow-600',
@@ -25,7 +25,7 @@
     />
     
     <div class="flex-1">
-      <span class={todo.completed ? 'line-through text-gray-500' : ''}>
+      <span class="text-gray-900 {todo.completed ? 'line-through text-gray-500' : ''}">
         {todo.text}
       </span>
       
@@ -44,17 +44,19 @@
 
     <button
       on:click={() => todos.delete(todo.id)}
-      class="text-red-500 hover:text-red-700"
+      class="text-red-500 hover:text-red-700 transition-colors"
     >
       Delete
     </button>
   </div>
 
-  {#if todo.steps.length > 0}
+  {#if todo.steps?.length > 0}
     <div class="mt-3 pl-8">
       <ul class="list-disc space-y-1 text-sm text-gray-600">
         {#each todo.steps as step}
-          <li>{step}</li>
+          <li class={todo.completed ? 'line-through text-gray-400' : ''}>
+            {step}
+          </li>
         {/each}
       </ul>
     </div>

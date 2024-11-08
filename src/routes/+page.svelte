@@ -5,8 +5,8 @@
   import ProductivityInsights from '$lib/components/ProductivityInsights.svelte';
   import { todos } from '$lib/stores/todoStore';
   
-  let filteredTodos = $todos;
   let showInsights = false;
+  let filteredTodos = [];
   
   function handleFilter(event: CustomEvent) {
     const { category, priority, sortBy } = event.detail;
@@ -23,6 +23,11 @@
         }
         return new Date(b[sortBy]).getTime() - new Date(a[sortBy]).getTime();
       });
+  }
+
+  // Update filteredTodos whenever the store changes
+  $: if ($todos) {
+    handleFilter({ detail: { category: 'all', priority: 'all', sortBy: 'createdAt' } });
   }
 </script>
 
